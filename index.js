@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import chalk from 'chalk'
-import chalkAnimation from 'chalk-animation'
-import inquirer from 'inquirer'
+import chalk from 'chalk';
+import chalkAnimation from 'chalk-animation';
+import inquirer from 'inquirer';
 import { installer } from './installer.js';
 import { 
     writeDbFiles, 
@@ -10,23 +10,21 @@ import {
     writeEnvFile 
 } from './fileCreator.js';
 import { createFolders, createProjectDir } from './folderCreater.js';
-
+import { createPackageJson } from './packageJsonCreator.js';
 
 // global responses
 let rawProjectName;
 let dbchoice;
 let langchoice;
 
-
 // timeout
-export const sleep = ( ms = 1000 ) => new Promise( ( r ) => setTimeout(r, ms) )
+export const sleep = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
 
 // welcome function 
 async function welcome() {
-    const rainbowTitle = chalkAnimation.rainbow("\n Welcome to XeoBuilds \n")
-
-    await sleep()
-    rainbowTitle.stop()
+    const rainbowTitle = chalkAnimation.rainbow("\n Welcome to JERRIT \n");
+    await sleep();
+    rainbowTitle.stop();
 }
 
 // project name
@@ -36,13 +34,12 @@ async function askName() {
         type: 'input',
         message: `${chalk.magentaBright('Project name ?')}`,
         default() {
-            return 'my-app'
+            return 'my-app';
         },
-    })
+    });
     
-    return res.admin_name
+    return res.admin_name;
 }
-
 
 // database selection
 async function askDb() {
@@ -51,12 +48,12 @@ async function askDb() {
         type: 'list',
         message: `${chalk.yellowBright('Select your Database ...')}`,
         choices: [
-            { name: chalk.greenBright('MongoDB'), value: 'MongoDB'},
-            {name: chalk.whiteBright('MySQL'), value: 'MySQL'},
+            { name: chalk.greenBright('MongoDB'), value: 'MongoDB' },
+            { name: chalk.whiteBright('MySQL'), value: 'MySQL' },
         ],
-    })
+    });
 
-    dbchoice = res.db_name
+    dbchoice = res.db_name;
 }
 
 // language selection
@@ -69,46 +66,51 @@ async function askLang() {
             `${chalk.cyanBright('Typescript')}`,
             `${chalk.yellowBright('Javascript')}`,
         ],
-    })
+    });
 
-    langchoice = res.lang_name
+    langchoice = res.lang_name;
 }
 
+// exit function 
+export async function exit(str) {
+    const rainbowTitle = chalkAnimation.rainbow(str);
+    await sleep();
+    rainbowTitle.stop();
+}
 
-// inquirer execution calls
-await welcome()
+// Main execution
+await welcome();
 
-rawProjectName = await askName()
-// creating root directory
-createProjectDir(rawProjectName)
+rawProjectName = await askName();
 
-await askDb()
-await askLang()
+// Creating root directory
+createProjectDir(rawProjectName);
 
-console.log("\n")
+await askDb();
+await askLang();
 
-// project set up execution calls
-console.log(chalk.whiteBright("Setting up your Project ... "))
-// installer(dbchoice)
+console.log("\n");
+
+// Project setup execution calls
+console.log(chalk.whiteBright("Setting up your Project ... "));
+
+// 1. Create folder structure
 const backendFolders = [
   'src/config',
   'src/controllers',
   'src/middlewares',
   'src/models',
   'src/routes',
-//   'services',
-//   'validations',
-//   'utils'
 ];
-createFolders(backendFolders)
-await writeEnvFile()
-await writeServerFiles()
-await writeDbFiles(dbchoice)
+createFolders(backendFolders);
 
+// 2. Create configuration and code files
+await writeEnvFile();
+await writeServerFiles();
+await writeDbFiles(dbchoice);
 
-//exit function 
-export async function exit(str) {
-    const rainbowTitle = chalkAnimation.rainbow(str)
-    await sleep()
-    rainbowTitle.stop()
-}
+// 3. Generate package.json
+await createPackageJson(rawProjectName, dbchoice, langchoice);
+
+// 4. Install dependencies
+installer();
