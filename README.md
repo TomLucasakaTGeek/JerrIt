@@ -9,7 +9,7 @@ A Project Scaffolding Framework similar to Vite.js and Next.js that aims to prov
 
 ## Project Structure:
 ``` 
-XeoBuilds/
+JerrIt/
  |_ Templates/
  |  |_ db-mongo.js
  |  |_ db-sql.js
