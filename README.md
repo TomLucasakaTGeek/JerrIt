@@ -1,8 +1,8 @@
-# XEOBUILD: Backend Project Scaffolding Tool
+# JERRIT: Backend Project Scaffolding Tool
 ---
 
 ## Problem Statement:
-A Project Scaffolding Framework similar to Vite.js and Next.js that aims to provide a ready-to-code boilerplate for working with MongoDB or MySQL databases. The Project aims to minimize the setup time for building a MERN or SERN app, enhancing productivity and efficiency for developers.
+A Project Scaffolding Framework similar to Vite.js and Next.js that aims to provide a ready-to-code boilerplate for working with MongoDB or MySQL databases through express.js server. The Project aims to minimize the setup time for building a MERN or SERN app, enhancing productivity and efficiency for developers.
 
 ---
 
