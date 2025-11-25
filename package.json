@@ -1,23 +1,52 @@
 {
-  "name": "xeo-builds",
+  "name": "create-jerry",
   "version": "1.0.0",
-  "description": "A CLI Build Tool to scaffold a MERN App",
+  "description": "A CLI tool to scaffold Express backend projects with MongoDB or MySQL",
   "main": "index.js",
   "type": "module",
+  "bin": {
+    "create-jerry": "./index.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "cli",
+    "scaffold",
+    "backend",
+    "express",
+    "mongodb",
+    "mysql",
+    "generator",
+    "boilerplate",
+    "nodejs"
+  ],
   "author": "Tanmay Khanna",
-  "license": "ISC",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TomLucasakaTGeek/JerrIt"
+  },
+  "bugs": {
+    "url": "https://github.com/TomLucasakaTGeek/JerrIt/issues"
+  },
+  "homepage": "https://github.com/TomLucasakaTGeek/JerrIt#readme",
   "dependencies": {
     "chalk": "^5.4.1",
     "chalk-animation": "^2.0.3",
-    "child": "^0.0.3",
-    "child_process": "^1.0.2",
-    "gradient-string": "^3.0.0",
     "inquirer": "^12.3.0",
-    "mongoose": "^8.16.2",
-    "mysql2": "^3.14.1",
     "nanospinner": "^1.2.2"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "index.js",
+    "installer.js",
+    "fileCreator.js",
+    "folderCreater.js",
+    "packageJsonCreator.js",
+    "Templates/",
+    "README.md"
+  ]
 }
