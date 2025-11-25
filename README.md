@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚀 create-jerry
 
 > A lightning-fast CLI tool to scaffold Express backend projects with MongoDB or MySQL
@@ -180,7 +179,7 @@ It helps others discover the project and motivates continued development.
 
 
 <!-- ## Low Level Daigram   ## Challenges  -->
-=======
+<!-- =======
 # JERRIT: Backend Project Scaffolding Tool
 ---
 
@@ -260,6 +259,4 @@ Video Link: https://drive.google.com/file/d/1o_9_5RMI21Inew4knCqXlCmeArhAG3xD/vi
 
 
 <!-- ## Low Level Daigram   ## Challenges  -->
-# Thank You, Don't forget to add a ⭐
-
->>>>>>> ae5e4e1 (Make Few Changes)
+# Thank You, Don't forget to add a ⭐ -->
