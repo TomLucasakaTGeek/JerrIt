@@ -161,8 +161,8 @@ MIT © Tanmay Khanna
 
 **Tanmay Khanna**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+- GitHub: [@TomLucasakaTGeek](https://github.com/TomLucasakaTGeek)
+- LinkedIn: [TanmayKhanna](https://linkedin.com/in/khannatanmay)
 
 ---
 
