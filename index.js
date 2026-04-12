@@ -3,114 +3,123 @@
 import chalk from 'chalk';
 import chalkAnimation from 'chalk-animation';
 import inquirer from 'inquirer';
-import { installer } from './installer.js';
-import { 
-    writeDbFiles, 
-    writeServerFiles, 
-    writeEnvFile 
+
+import {
+  writeCoreFiles,
+  writeUserModule,
+  writeEnvFile,
+  injectRoutes
 } from './fileCreator.js';
-import { createFolders, createProjectDir } from './folderCreater.js';
+
+import { createProjectDir } from './folderCreator.js';
 import { createPackageJson } from './packageJsonCreator.js';
 
-// global responses
+import { mongodbPlugin } from './plugins/mongodb.plugin.js';
+import { mysqlPlugin } from './plugins/mysql.plugin.js';
+import { aiPlugin } from './plugins/ai.plugin.js';
+import { applyPlugins } from './plugins/pluginManager.js';
+
+// globals
 let rawProjectName;
 let dbchoice;
 let langchoice;
 
-// timeout
-export const sleep = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
+// utils
+const sleep = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
 
-// welcome function 
 async function welcome() {
-    const rainbowTitle = chalkAnimation.rainbow("\n Welcome to JERRIT \n");
-    await sleep();
-    rainbowTitle.stop();
+  const rainbowTitle = chalkAnimation.rainbow("\n Welcome to JERRIT \n");
+  await sleep();
+  rainbowTitle.stop();
 }
 
-// project name
 async function askName() {
-    const res = await inquirer.prompt({
-        name: 'admin_name',
-        type: 'input',
-        message: `${chalk.magentaBright('Project name ?')}`,
-        default() {
-            return 'my-app';
-        },
-    });
-    
-    return res.admin_name;
+  const res = await inquirer.prompt({
+    name: 'name',
+    type: 'input',
+    message: 'Project name?',
+    default: 'my-app'
+  });
+  return res.name;
 }
 
-// database selection
 async function askDb() {
-    const res = await inquirer.prompt({
-        name: 'db_name',
-        type: 'list',
-        message: `${chalk.yellowBright('Select your Database ...')}`,
-        choices: [
-            { name: chalk.greenBright('MongoDB'), value: 'MongoDB' },
-            { name: chalk.whiteBright('MySQL'), value: 'MySQL' },
-        ],
-    });
-
-    dbchoice = res.db_name;
+  const res = await inquirer.prompt({
+    name: 'db',
+    type: 'list',
+    message: 'Select Database',
+    choices: ['MongoDB', 'MySQL']
+  });
+  dbchoice = res.db;
 }
 
-// language selection
 async function askLang() {
-    const res = await inquirer.prompt({
-        name: 'lang_name',
-        type: 'list',
-        message: `${chalk.green('Select your Language...')}`,
-        choices: [
-            `${chalk.cyanBright('Typescript')}`,
-            `${chalk.yellowBright('Javascript')}`,
-        ],
-    });
-
-    langchoice = res.lang_name;
+  const res = await inquirer.prompt({
+    name: 'lang',
+    type: 'list',
+    message: 'Select Language',
+    choices: ['Typescript', 'Javascript']
+  });
+  langchoice = res.lang;
 }
 
-// exit function 
-export async function exit(str) {
-    const rainbowTitle = chalkAnimation.rainbow(str);
-    await sleep();
-    rainbowTitle.stop();
+async function askAI() {
+  const res = await inquirer.prompt({
+    name: 'ai',
+    type: 'confirm',
+    message: 'Add AI module?',
+    default: false
+  });
+  return res.ai;
 }
 
-// Main execution
+// MAIN
 await welcome();
 
 rawProjectName = await askName();
-
-// Creating root directory
 createProjectDir(rawProjectName);
 
 await askDb();
 await askLang();
 
-console.log("\n");
+const aiEnabled = await askAI();
 
-// Project setup execution calls
-console.log(chalk.whiteBright("Setting up your Project ... "));
+console.log(chalk.whiteBright("\nSetting up project...\n"));
 
-// 1. Create folder structure
-const backendFolders = [
-  'src/config',
-  'src/controllers',
-  'src/middlewares',
-  'src/models',
-  'src/routes',
-];
-createFolders(backendFolders);
+// core
+await writeCoreFiles(langchoice);
 
-// 2. Create configuration and code files
+// base module
+await writeUserModule(langchoice);
+
+// env
 await writeEnvFile();
-await writeServerFiles();
-await writeDbFiles(dbchoice);
 
-// 3. Generate package.json
-await createPackageJson(rawProjectName, dbchoice, langchoice);
+// plugins
+const plugins = [];
 
-// 4. Install dependencies
-installer();
+if (dbchoice === 'MongoDB') {
+  plugins.push(mongodbPlugin(langchoice));
+}
+
+if (dbchoice === 'MySQL') {
+  plugins.push(mysqlPlugin(langchoice));
+}
+
+if (aiEnabled) {
+  plugins.push(aiPlugin(langchoice));
+}
+
+await applyPlugins(plugins, { langchoice });
+
+// route injection
+const injections = plugins
+  .map((p) => p.inject)
+  .filter(Boolean);
+
+await injectRoutes(langchoice, injections);
+
+// package.json
+await createPackageJson(rawProjectName, dbchoice, langchoice, plugins);
+
+// installer(); // optional

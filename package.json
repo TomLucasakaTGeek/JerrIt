@@ -1,11 +1,11 @@
 {
   "name": "create-jerry",
-  "version": "1.0.0",
-  "description": "A CLI tool to scaffold Express backend projects with MongoDB or MySQL",
+  "version": "2.0.0",
+  "description": "A CLI to scaffold Express backend projects with MongoDB or MySQL, plugin-based AI modules, and support for JavaScript and TypeScript.",
   "main": "index.js",
   "type": "module",
   "bin": {
-    "create-jerry": "./index.js"
+    "create-jerry": "index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -44,7 +44,7 @@
     "index.js",
     "installer.js",
     "fileCreator.js",
-    "folderCreater.js",
+    "folderCreator.js",
     "packageJsonCreator.js",
     "Templates/",
     "README.md"
