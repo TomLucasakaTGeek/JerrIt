@@ -240,7 +240,6 @@ If this helped you:
 ## 📄 License
 
 MIT License
-```
 
 ---
 
