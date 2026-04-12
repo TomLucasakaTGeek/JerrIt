@@ -1,22 +1,36 @@
-# 🚀 create-jerry
+# 🚀 create-jerry (JerrIt CLI)
 
-> A lightning-fast CLI tool to scaffold Express backend projects with MongoDB or MySQL
+> A lightning-fast CLI tool to scaffold production-ready Express backend projects with MongoDB or MySQL, plugin-based architecture, and optional AI module support.
 
 [![npm version](https://img.shields.io/npm/v/create-jerry.svg)](https://www.npmjs.com/package/create-jerry)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**create-jerry** is a project scaffolding tool similar to Vite.js and Create React App, but designed specifically for backend development. It generates a production-ready Express.js boilerplate with your choice of MongoDB or MySQL, complete with folder structure, database configuration, and all necessary dependencies.
+---
+
+## ✨ Overview
+
+**create-jerry** is a backend scaffolding CLI inspired by tools like Vite and Create React App.
+
+It generates a structured Express.js backend with:
+
+- MongoDB OR MySQL support
+- JavaScript OR TypeScript support
+- Optional AI module (OpenAI integration)
+- Plugin-based architecture (extensible design)
+- Clean modular folder structure
 
 ---
 
-## ✨ Features
+## ⚡ Features
 
-- 🎯 **Interactive CLI** - Simple prompts guide you through project setup
-- ⚡ **Fast Setup** - Get a working backend in under 60 seconds
-- 🗄️ **Database Choice** - MongoDB or MySQL support out of the box
-- 📝 **TypeScript Support** - Choose JavaScript or TypeScript for your project
-- 📁 **Clean Architecture** - Pre-configured folder structure following best practices
-- 🔧 **Ready to Code** - All dependencies installed and configured automatically
+- 🎯 Interactive CLI prompts (Inquirer-based)
+- 🧠 Optional AI module (OpenAI integration)
+- 🗄️ Database selection (MongoDB / MySQL)
+- 🧾 JavaScript & TypeScript support
+- 🔌 Plugin-based architecture system
+- 📁 Production-ready folder structure
+- ⚙️ Auto dependency injection in package.json
+- 🚀 Fully working Express server setup
 
 ---
 
@@ -26,134 +40,181 @@
 npx create-jerry
 ```
 
-That's it! Just answer a few prompts:
-1. **Project name** - What do you want to call your project?
-2. **Database** - MongoDB or MySQL?
-3. **Language** - JavaScript or TypeScript?
+Then follow prompts:
 
-Your backend project will be created and ready to go! 🎉
+1. Project name
+2. Database (MongoDB / MySQL)
+3. Language (JavaScript / TypeScript)
+4. AI module (Yes / No)
 
 ---
 
 ## 📦 What Gets Generated
 
+### Project Structure
+
 ```
-your-project-name/
+your-project/
 ├── src/
 │   ├── config/
-│   │   └── .env
-│   ├── controllers/
+│   │   ├── db.js / db.ts
+│   │   └── index.js
+│   │
+│   ├── modules/
+│   │   ├── user/
+│   │   └── ai/ (optional)
+│   │
+│   ├── routes/
+│   │   └── index.js
+│   │
 │   ├── middlewares/
-│   ├── models/
-│   │   └── db.js          # Pre-configured database connection
-│   └── routes/
-├── app.js                  # Express server setup
-└── package.json            # With all dependencies configured
+│   │   └── error.middleware.js
+│   │
+│   ├── utils/
+│   │   └── asyncHandler.js
+│   │
+│   ├── app.js
+│   └── server.js
+│
+├── .env
+├── package.json
+└── tsconfig.json (if TypeScript)
 ```
-
-### 📋 Included Dependencies
-
-**Base:**
-- Express.js - Web framework
-- dotenv - Environment variables
-- cors - Cross-origin resource sharing
-
-**Database:**
-- Mongoose (MongoDB) or MySQL2 (MySQL)
-
-**Dev Tools:**
-- Nodemon - Auto-restart during development
-- TypeScript tooling (if TypeScript is selected)
 
 ---
 
-## 💻 Usage
+## 🧠 Architecture
 
-### Create a new project
+This CLI uses a **plugin-based generator system**:
+
+### Supported Plugins
+
+- 🟢 MongoDB Plugin
+- 🟡 MySQL Plugin
+- 🤖 AI Plugin (OpenAI)
+
+### Each Plugin Handles:
+
+- Module generation (if required)
+- Dependency injection
+- Route injection
+- Setup logic execution
+
+---
+
+## 🔌 Example CLI Flow
+
+```bash
+✔ Project name? my-app
+✔ Select Database MongoDB
+✔ Select Language Typescript
+✔ Add AI module? Yes
+```
+
+### Output:
+
+- MongoDB configured project
+- AI module added (optional)
+- Routes auto-injected
+- Dependencies installed dynamically
+
+---
+
+## 🧰 Available Scripts (Generated Project)
+
+```bash
+npm run dev      # Development mode
+npm start        # Production mode
+npm run build    # TypeScript build (if TS)
+```
+
+---
+
+## 🧠 AI Module (Optional)
+
+When enabled:
+
+- `/ai/chat` endpoint is created
+- OpenAI SDK installed
+- Controller → Service → Provider architecture
+- GPT-powered backend endpoint ready to use
+
+---
+
+## 🗄️ Database Support
+
+### MongoDB
+
+- Mongoose integration
+- Predefined User model + CRUD
+- Auto connection setup
+
+### MySQL
+
+- mysql2 connection pool
+- Prebuilt SQL queries
+- Ready-to-use CRUD layer
+
+---
+
+## 🔌 Plugin System
+
+Plugins follow this structure:
+
+```js
+{
+  name: "plugin-name",
+  setup(),
+  inject,
+  dependencies
+}
+```
+
+### Benefits:
+
+- Extensible architecture
+- Clean separation of concerns
+- Easy future expansion (auth, redis, payments, etc.)
+
+---
+
+## 📚 Tech Stack
+
+- Node.js
+- Express.js
+- Inquirer.js
+- Chalk
+- Nanospinner
+- OpenAI SDK (optional)
+- Mongoose / MySQL2
+
+---
+
+## 🎯 Why create-jerry?
+
+Because backend setup is repetitive:
+
+- Folder structure setup ❌
+- Database configuration ❌
+- Boilerplate code ❌
+
+Now:
 
 ```bash
 npx create-jerry
 ```
 
-### Navigate to your project
-
-```bash
-cd your-project-name
-```
-
-### Start developing
-
-```bash
-npm run dev
-```
-
-Your Express server will start with hot-reload enabled! 🔥
+Done in seconds ⚡
 
 ---
 
-## 🎯 Problem It Solves
-
-Setting up a backend project from scratch involves:
-- ❌ Creating folder structure manually
-- ❌ Installing and configuring dependencies
-- ❌ Setting up database connections
-- ❌ Configuring development environment
-- ❌ 15-30 minutes of repetitive setup work
-
-**create-jerry** reduces this to a single command! ✅
-
----
-
-## 🛠️ Available Scripts
-
-In your generated project:
-
-```bash
-npm run dev      # Start development server with hot-reload
-npm start        # Start production server
-npm run build    # Compile TypeScript (TS projects only)
-```
-
----
-
-## 📚 Examples
-
-### MongoDB + JavaScript Project
-```bash
-npx create-jerry
-? Project name: my-mongodb-api
-? Select your Database: MongoDB
-? Select your Language: Javascript
-```
-
-### MySQL + TypeScript Project
-```bash
-npx create-jerry
-? Project name: my-mysql-api
-? Select your Database: MySQL
-? Select your Language: Typescript
-```
-
----
-
-## 🎥 Demo
-
-Watch the tool in action: [Demo Video](https://drive.google.com/file/d/1o_9_5RMI21Inew4knCqXlCmeArhAG3xD/view?usp=sharing)
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-- 🐛 Report bugs
-- 💡 Suggest new features
-- 🔧 Submit pull requests
-
----
-
-## 📄 License
-
-MIT © Tanmay Khanna
+## 🛠️ Future Plans
+- 🟦 Typescript Migration
+- 🔐 Authentication plugin (JWT / OAuth)
+- ⚡ Redis caching plugin
+- 📦 Docker support
+- 🧪 Testing setup (Jest)
+- ☁️ Deployment presets
 
 ---
 
@@ -162,15 +223,24 @@ MIT © Tanmay Khanna
 **Tanmay Khanna**
 
 - GitHub: [@TomLucasakaTGeek](https://github.com/TomLucasakaTGeek)
-- LinkedIn: [TanmayKhanna](https://linkedin.com/in/khannatanmay)
+- Project: JerrIt CLI
 
 ---
 
-## ⭐ Show Your Support
+## ⭐ Support
 
-If this tool helped you save time, give it a star! ⭐
+If this helped you:
 
-It helps others discover the project and motivates continued development.
+- ⭐ Star the repo
+- 🔁 Share with developers
+- 🧩 Contribute plugins
+
+---
+
+## 📄 License
+
+MIT License
+```
 
 ---
 
