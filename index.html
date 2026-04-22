@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>create-jerry — The Backend Scaffold Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<style>
+  /* ─── TOKENS ─────────────────────────────────────────────────────────── */
+  :root {
+    --bg:       #080810;
+    --bg2:      #0e0e1a;
+    --bg3:      #12121f;
+    --border:   rgba(255,255,255,0.07);
+    --text:     #e8e8f0;
+    --muted:    #7070a0;
+    --mongo:    #00ed64;
+    --mysql:    #00adef;
+    --ai:       #f59e0b;
+    --white:    #ffffff;
+    --grid-line: rgba(255,255,255,0.04);
+  }
+
+  /* ─── RESET ──────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* ─── GRAIN OVERLAY ──────────────────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── GRID BACKGROUND ────────────────────────────────────────────────── */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* ─── NAV ─────────────────────────────────────────────────────────────── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    background: rgba(8,8,16,0.7);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    color: var(--white);
+  }
+  .nav-logo .bolt {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--mongo), var(--mysql));
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    list-style: none;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .nav-links a:hover { color: var(--white); transition: color .2s; }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .btn-gh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    transition: all .2s;
+  }
+  .btn-gh:hover { color: var(--white); border-color: rgba(255,255,255,0.2); }
+
+  /* ─── HERO ────────────────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 120px 0 80px;
+  }
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+
+  /* radial glows behind graphic */
+  .hero-glow-mongo {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    right: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: radial-gradient(ellipse, rgba(0,237,100,0.12) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .hero-glow-mysql {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    right: 200px;
+    top: 30%;
+    background: radial-gradient(ellipse, rgba(0,173,239,0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .hero-glow-amber {
+    position: absolute;
+    width: 600px;
+    height: 300px;
+    left: -100px;
+    top: 20%;
+    background: radial-gradient(ellipse, rgba(245,158,11,0.04) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .hero-tag .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--mongo);
+    box-shadow: 0 0 6px var(--mongo);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 5vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--white);
+    margin-bottom: 24px;
+  }
+  h1 .accent-mongo { color: var(--mongo); }
+  h1 .accent-mysql { color: var(--mysql); }
+
+  .hero-desc {
+    font-size: 1.125rem;
+    color: var(--muted);
+    max-width: 480px;
+    margin-bottom: 40px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    padding: 12px 28px;
+    background: var(--white);
+    color: #080810;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    font-family: 'Syne', sans-serif;
+    transition: all .2s;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(255,255,255,0.15);
+  }
+  .btn-secondary {
+    padding: 12px 28px;
+    background: transparent;
+    color: var(--text);
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    transition: all .2s;
+    cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.2); color: var(--white); }
+
+  /* ─── HERO TERMINAL ──────────────────────────────────────────────────── */
+  .hero-command {
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pkg-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+  }
+  .pkg-tab {
+    padding: 6px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    margin-bottom: -1px;
+  }
+  .pkg-tab.active {
+    color: var(--white);
+    border-bottom-color: var(--mongo);
+  }
+  .pkg-tab:hover { color: var(--text); }
+
+  .cmd-block {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .cmd-block-inner {
+    padding: 14px 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--mongo);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cmd-block-inner .dollar { color: var(--muted); }
+  .cmd-label {
+    float: right;
+    font-size: 0.7rem;
+    color: var(--muted);
+    padding: 14px 20px;
+    float: right;
+  }
+  .cmd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+  .cmd-dots { display: flex; gap: 5px; }
+  .cmd-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .cmd-dot:nth-child(1) { background: #ff5f57; }
+  .cmd-dot:nth-child(2) { background: #ffbd2e; }
+  .cmd-dot:nth-child(3) { background: #28ca41; }
+  .cmd-shell-label { font-size: 0.7rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  /* ─── DATABASE GRAPHIC ───────────────────────────────────────────────── */
+  .db-graphic {
+    position: relative;
+    height: 460px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .db-scene {
+    position: relative;
+    width: 340px;
+    height: 340px;
+  }
+  /* Isometric-ish floating cards */
+  .db-card {
+    position: absolute;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(8,8,16,0.8);
+    backdrop-filter: blur(10px);
+    animation: float 6s ease-in-out infinite;
+  }
+  .db-card svg { display: block; }
+
+  /* MongoDB card */
+  .db-mongo {
+    width: 130px;
+    height: 130px;
+    top: 10px;
+    left: 10px;
+    border: 1.5px solid var(--mongo);
+    box-shadow: 0 0 30px rgba(0,237,100,0.25), inset 0 0 40px rgba(0,237,100,0.04);
+    color: var(--mongo);
+    animation-delay: 0s;
+  }
+  /* MySQL card */
+  .db-mysql {
+    width: 120px;
+    height: 120px;
+    top: 20px;
+    right: 20px;
+    border: 1.5px solid var(--mysql);
+    box-shadow: 0 0 30px rgba(0,173,239,0.25), inset 0 0 40px rgba(0,173,239,0.04);
+    color: var(--mysql);
+    animation-delay: -2s;
+  }
+  /* AI card */
+  .db-ai {
+    width: 110px;
+    height: 110px;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 1.5px solid var(--ai);
+    box-shadow: 0 0 30px rgba(245,158,11,0.25), inset 0 0 40px rgba(245,158,11,0.04);
+    color: var(--ai);
+    animation-delay: -4s;
+  }
+  /* Express base */
+  .db-express {
+    width: 150px;
+    height: 150px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    box-shadow: 0 0 20px rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    animation-delay: -3s;
+    font-size: 0.9rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+  }
+
+  /* connector lines SVG behind cards */
+  .db-connectors {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-10px) rotate(0.5deg); }
+    66% { transform: translateY(6px) rotate(-0.5deg); }
+  }
+  .db-ai { animation-name: float-center; }
+  @keyframes float-center {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-10px); }
+  }
+
+  /* ─── TRUSTED BY ─────────────────────────────────────────────────────── */
+  .trusted {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+    flex-wrap: wrap;
+  }
+  .trusted-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .trusted-tech {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+  .trusted-item {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: -0.02em;
+    transition: color .2s;
+  }
+  .trusted-item:hover { color: rgba(255,255,255,0.55); }
+
+  /* ─── SECTIONS ────────────────────────────────────────────────────────── */
+  section { position: relative; }
+  .section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  .section-eyebrow {
+    text-align: center;
+    padding: 100px 40px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .section-eyebrow h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  .section-eyebrow p {
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 1.05rem;
+    font-weight: 300;
+  }
+
+  /* ─── FEATURES GRID ──────────────────────────────────────────────────── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+  }
+  .feat {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    transition: background .3s;
+  }
+  .feat:hover { background: rgba(255,255,255,0.015); }
+  .feat-accent {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 0;
+    transition: height .4s ease;
+  }
+  .feat:hover .feat-accent { height: 100%; }
+  .feat-accent.mongo { background: linear-gradient(to bottom, var(--mongo), transparent); }
+  .feat-accent.mysql { background: linear-gradient(to bottom, var(--mysql), transparent); }
+  .feat-accent.ai    { background: linear-gradient(to bottom, var(--ai), transparent); }
+  .feat-accent.white { background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent); }
+
+  .feat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+  }
+  .feat-icon.mongo  { background: rgba(0,237,100,0.08);  border: 1px solid rgba(0,237,100,0.2); }
+  .feat-icon.mysql  { background: rgba(0,173,239,0.08);  border: 1px solid rgba(0,173,239,0.2); }
+  .feat-icon.ai     { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .feat-icon.white  { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+
+  .feat h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+  .feat p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+  .feat-visual {
+    margin-top: 32px;
+  }
+
+  /* Code snippet style */
+  .code-snip {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.8;
+    overflow: hidden;
+  }
+  .code-snip .c-green  { color: var(--mongo); }
+  .code-snip .c-blue   { color: var(--mysql); }
+  .code-snip .c-amber  { color: var(--ai); }
+  .code-snip .c-gray   { color: var(--muted); }
+  .code-snip .c-white  { color: var(--white); }
+  .code-snip .c-dim    { color: rgba(255,255,255,0.3); }
+
+  /* Folder tree */
+  .tree {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.9;
+    color: var(--muted);
+  }
+  .tree .t-folder  { color: var(--mysql); }
+  .tree .t-file    { color: rgba(255,255,255,0.5); }
+  .tree .t-optional{ color: var(--ai); }
+  .tree .t-root    { color: var(--white); font-weight: 700; }
+
+  /* CLI prompt */
+  .cli-flow {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 2;
+  }
+  .cli-q  { color: var(--mongo); }
+  .cli-a  { color: var(--white); }
+  .cli-ok { color: var(--ai); }
+
+  /* Plugin pills */
+  .plugin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .plugin-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    transition: all .2s;
+  }
+  .plugin-pill:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
+  .plugin-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pd-mongo { background: var(--mongo); box-shadow: 0 0 6px var(--mongo); }
+  .pd-mysql { background: var(--mysql); box-shadow: 0 0 6px var(--mysql); }
+  .pd-ai    { background: var(--ai);    box-shadow: 0 0 6px var(--ai); }
+  .pd-gray  { background: var(--muted); }
+  .plugin-name { color: var(--white); font-family: 'Space Mono', monospace; font-size: 0.75rem; flex: 1; }
+  .plugin-badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+  }
+  .pb-active   { background: rgba(0,237,100,0.1);  color: var(--mongo); border: 1px solid rgba(0,237,100,0.2); }
+  .pb-optional { background: rgba(245,158,11,0.1); color: var(--ai);    border: 1px solid rgba(245,158,11,0.2); }
+  .pb-soon     { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border); }
+
+  /* ─── FOUNDATION SECTION ──────────────────────────────────────────────── */
+  .foundation {
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .foundation::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba(0,237,100,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .foundation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    margin-top: 60px;
+  }
+  .foundation-card {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px;
+    position: relative;
+  }
+  .foundation-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+  .foundation-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  /* AI endpoint showcase */
+  .endpoint-box {
+    margin-top: 28px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .endpoint-header {
+    padding: 10px 16px;
+    background: rgba(245,158,11,0.05);
+    border-bottom: 1px solid rgba(245,158,11,0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ai);
+  }
+  .method-badge {
+    background: rgba(245,158,11,0.15);
+    color: var(--ai);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.65rem;
+  }
+  .endpoint-body {
+    padding: 14px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+  .endpoint-body .key   { color: var(--mysql); }
+  .endpoint-body .val   { color: rgba(255,255,255,0.5); }
+  .endpoint-body .str   { color: var(--ai); }
+
+  /* ─── STATS SECTION ──────────────────────────────────────────────────── */
+  .stats-section {
+    padding: 80px 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+  }
+  .stats-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  .stats-text h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .stats-text p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+  .stats-numbers {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .stat-box {
+    background: var(--bg);
+    padding: 32px 28px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .stat-num.mongo { color: var(--mongo); }
+  .stat-num.mysql { color: var(--mysql); }
+  .stat-num.ai    { color: var(--ai); }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ─── TESTIMONIALS (Community) ───────────────────────────────────────── */
+  .community {
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .testi-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 40px;
+    margin-bottom: 60px;
+  }
+  .testi-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  .testi-header p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 10px;
+    font-weight: 300;
+  }
+  .testi-meta { text-align: right; }
+  .testi-meta .big-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    display: block;
+  }
+  .testi-meta .big-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+
+  .testi-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    columns: 3;
+    column-gap: 16px;
+  }
+  .testi-card {
+    break-inside: avoid;
+    margin-bottom: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color .2s;
+  }
+  .testi-card:hover { border-color: rgba(255,255,255,0.12); }
+  .testi-card.highlight-mongo { border-color: rgba(0,237,100,0.2); }
+  .testi-card.highlight-mysql { border-color: rgba(0,173,239,0.15); }
+  .testi-card p {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    font-weight: 300;
+    margin-bottom: 20px;
+  }
+  .testi-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .testi-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    flex-shrink: 0;
+  }
+  .testi-name {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.8rem;
+  }
+  .testi-handle {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  /* ─── CTA ─────────────────────────────────────────────────────────────── */
+  .cta-section {
+    padding: 0 40px 100px;
+  }
+  .cta-box {
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg,
+      rgba(0,237,100,0.15) 0%,
+      rgba(0,173,239,0.1) 40%,
+      rgba(245,158,11,0.08) 100%
+    );
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 80px 60px;
+    text-align: center;
+  }
+  .cta-box::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 120%, rgba(0,237,100,0.2) 0%, transparent 60%);
+  }
+  .cta-box > * { position: relative; z-index: 1; }
+  .cta-box h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .cta-box p {
+    color: rgba(255,255,255,0.6);
+    font-size: 1rem;
+    margin-bottom: 36px;
+    font-weight: 300;
+  }
+  .cta-cmd {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 14px 24px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--mongo);
+    margin: 0 auto 32px;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .cta-cmd:hover { border-color: rgba(0,237,100,0.4); }
+  .cta-cmd .dollar { color: var(--muted); }
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ─── FOOTER ──────────────────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 60px 40px 40px;
+  }
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .footer-top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 60px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+  }
+  .footer-brand .nav-logo { margin-bottom: 16px; }
+  .footer-brand p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    font-weight: 300;
+    max-width: 240px;
+  }
+  .footer-col h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 10px; }
+  .footer-col a {
+    font-size: 0.875rem;
+    color: var(--muted);
+    transition: color .2s;
+  }
+  .footer-col a:hover { color: var(--white); }
+  .footer-bottom {
+    padding-top: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-bottom p {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.2);
+  }
+  .footer-bottom a { color: var(--muted); }
+  .footer-social {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .footer-social a {
+    color: var(--muted);
+    font-size: 0.8rem;
+    transition: color .2s;
+  }
+  .footer-social a:hover { color: var(--white); }
+
+  /* ─── SCROLL ANIMATIONS ──────────────────────────────────────────────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-delay-1 { transition-delay: .1s; }
+  .reveal-delay-2 { transition-delay: .2s; }
+  .reveal-delay-3 { transition-delay: .3s; }
+
+  /* ─── COPY TOAST ─────────────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(0,237,100,0.1);
+    border: 1px solid rgba(0,237,100,0.3);
+    color: var(--mongo);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    transition: transform .3s ease;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── RESPONSIVE ─────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; }
+    .db-graphic { display: none; }
+    .features-grid { grid-template-columns: 1fr; }
+    .foundation-grid { grid-template-columns: 1fr; }
+    .stats-inner { grid-template-columns: 1fr; gap: 40px; }
+    .testi-grid { columns: 1; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 600px) {
+    .footer-top { grid-template-columns: 1fr; }
+    .testi-header { grid-template-columns: 1fr; }
+    .testi-meta { text-align: left; }
+  }
+
+  /* Active tab content switching */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-logo">
+    <div class="bolt">⚡</div>
+    create-jerry
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Guide</a></li>
+    <li><a href="#foundation">Plugins</a></li>
+    <li><a href="#community">Community</a></li>
+    <li><a href="https://github.com/TomLucasakaTGeek" target="_blank">GitHub</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="https://github.com/TomLucasakaTGeek" target="_blank" class="btn-gh">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-glow-mongo"></div>
+  <div class="hero-glow-mysql"></div>
+  <div class="hero-glow-amber"></div>
+
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-tag">
+        <span class="dot"></span>
+        By Tanmay Khanna
+      </div>
+      <h1>The Backend<br/>Scaffold Tool<br/>for <span class="accent-mongo">Node</span><span class="accent-mysql">.js</span></h1>
+      <p class="hero-desc">
+        create-jerry generates a production-ready Express server with MongoDB or MySQL, TypeScript support, and an optional AI module — in seconds.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="scrollTo('#features')">Get Started</button>
+        <a href="https://github.com/TomLucasakaTGeek" class="btn-secondary">View on GitHub</a>
+      </div>
+
+      <!-- Package manager tabs -->
+      <div style="margin-top:40px;">
+        <div class="pkg-tabs">
+          <div class="pkg-tab active" onclick="switchTab(this,'npx')">npx</div>
+          <div class="pkg-tab" onclick="switchTab(this,'npm')">npm</div>
+          <div class="pkg-tab" onclick="switchTab(this,'yarn')">yarn</div>
+          <div class="pkg-tab" onclick="switchTab(this,'pnpm')">pnpm</div>
+        </div>
+        <div class="cmd-block" id="cmd-npx">
+          <div class="cmd-header">
+            <div class="cmd-dots">
+              <div class="cmd-dot"></div><div class="cmd-dot"></div><div class="cmd-dot"></div>
+            </div>
+            <span class="cmd-shell-label">bash</span>
+          </div>
+          <div class="cmd-block-inner" onclick="copyCmd(this)">
+            <span class="dollar">$</span>
+            <span id="cmd-text">npx create-jerry</span>
+            <span style="margin-left:auto;color:var(--muted);font-size:.7rem;cursor:pointer;">copy</span>
+          </div>
+        </div>
+        <div class="cmd-block" id="cmd-npm" style="display:none">
+          <div class="cmd-header"><div class="cmd-dots"><div class="cmd-dot"></div><div class="cmd-dot"></div><div class="cmd-dot"></div></div><span class="cmd-shell-label">bash</span></div>
+          <div class="cmd-block-inner" onclick="copyCmd(this)"><span class="dollar">$</span><span>npm create jerry@latest</span><span style="margin-left:auto;color:var(--muted);font-size:.7rem;cursor:pointer;">copy</span></div>
+        </div>
+        <div class="cmd-block" id="cmd-yarn" style="display:none">
+          <div class="cmd-header"><div class="cmd-dots"><div class="cmd-dot"></div><div class="cmd-dot"></div><div class="cmd-dot"></div></div><span class="cmd-shell-label">bash</span></div>
+          <div class="cmd-block-inner" onclick="copyCmd(this)"><span class="dollar">$</span><span>yarn create jerry</span><span style="margin-left:auto;color:var(--muted);font-size:.7rem;cursor:pointer;">copy</span></div>
+        </div>
+        <div class="cmd-block" id="cmd-pnpm" style="display:none">
+          <div class="cmd-header"><div class="cmd-dots"><div class="cmd-dot"></div><div class="cmd-dot"></div><div class="cmd-dot"></div></div><span class="cmd-shell-label">bash</span></div>
+          <div class="cmd-block-inner" onclick="copyCmd(this)"><span class="dollar">$</span><span>pnpm create jerry</span><span style="margin-left:auto;color:var(--muted);font-size:.7rem;cursor:pointer;">copy</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database graphic -->
+    <div class="db-graphic">
+      <svg class="db-connectors" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
+        <!-- connector from Express center to MongoDB top-left -->
+        <line x1="170" y1="165" x2="75" y2="75" stroke="rgba(0,237,100,0.2)" stroke-width="1" stroke-dasharray="4 4">
+          <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="1.5s" repeatCount="indefinite"/>
+        </line>
+        <!-- connector to MySQL top-right -->
+        <line x1="170" y1="165" x2="260" y2="80" stroke="rgba(0,173,239,0.2)" stroke-width="1" stroke-dasharray="4 4">
+          <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="1.8s" repeatCount="indefinite"/>
+        </line>
+        <!-- connector to AI bottom -->
+        <line x1="170" y1="185" x2="170" y2="245" stroke="rgba(245,158,11,0.2)" stroke-width="1" stroke-dasharray="4 4">
+          <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="2s" repeatCount="indefinite"/>
+        </line>
+        <!-- glow nodes -->
+        <circle cx="75" cy="75" r="4" fill="rgba(0,237,100,0.4)">
+          <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="260" cy="80" r="4" fill="rgba(0,173,239,0.4)">
+          <animate attributeName="r" values="3;5;3" dur="2.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="170" cy="250" r="4" fill="rgba(245,158,11,0.4)">
+          <animate attributeName="r" values="3;5;3" dur="1.8s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+
+      <!-- Express center -->
+      <div class="db-card db-express">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="14" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+          <text x="16" y="20" text-anchor="middle" font-family="Syne,sans-serif" font-weight="700" font-size="9" fill="rgba(255,255,255,0.5)">EXPRESS</text>
+        </svg>
+      </div>
+
+      <!-- MongoDB card -->
+      <div class="db-card db-mongo">
+        <!-- MongoDB leaf outline SVG -->
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 4 C20 4, 28 10, 28 20 C28 27, 24 33, 20 36 C16 33, 12 27, 12 20 C12 10, 20 4, 20 4Z" stroke="#00ed64" stroke-width="1.5" fill="none"/>
+          <line x1="20" y1="20" x2="20" y2="38" stroke="#00ed64" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="20" cy="20" r="2" fill="#00ed64" opacity="0.6"/>
+        </svg>
+        <span>MongoDB</span>
+      </div>
+
+      <!-- MySQL card -->
+      <div class="db-card db-mysql">
+        <!-- MySQL dolphin-inspired outline -->
+        <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- stylised DB cylinders -->
+          <ellipse cx="19" cy="10" rx="10" ry="4" stroke="#00adef" stroke-width="1.5" fill="none"/>
+          <rect x="9" y="10" width="20" height="10" stroke="none" fill="none"/>
+          <line x1="9" y1="10" x2="9" y2="20" stroke="#00adef" stroke-width="1.5"/>
+          <line x1="29" y1="10" x2="29" y2="20" stroke="#00adef" stroke-width="1.5"/>
+          <ellipse cx="19" cy="20" rx="10" ry="4" stroke="#00adef" stroke-width="1.5" fill="none"/>
+          <ellipse cx="19" cy="28" rx="10" ry="4" stroke="rgba(0,173,239,0.35)" stroke-width="1" fill="none"/>
+          <line x1="9" y1="20" x2="9" y2="28" stroke="rgba(0,173,239,0.35)" stroke-width="1"/>
+          <line x1="29" y1="20" x2="29" y2="28" stroke="rgba(0,173,239,0.35)" stroke-width="1"/>
+        </svg>
+        <span>MySQL</span>
+      </div>
+
+      <!-- AI card -->
+      <div class="db-card db-ai">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- brain/AI outline -->
+          <circle cx="18" cy="18" r="13" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="3 2"/>
+          <circle cx="18" cy="18" r="6" stroke="#f59e0b" stroke-width="1" fill="none"/>
+          <line x1="18" y1="5" x2="18" y2="12" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="18" y1="24" x2="18" y2="31" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="5" y1="18" x2="12" y2="18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="24" y1="18" x2="31" y2="18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="18" cy="18" r="2" fill="#f59e0b" opacity="0.7"/>
+        </svg>
+        <span>AI Module</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TRUSTED BY ────────────────────────────────────────────────── -->
+<div class="trusted">
+  <span class="trusted-label">Built on top of</span>
+  <div class="trusted-tech">
+    <span class="trusted-item">Express.js</span>
+    <span class="trusted-item">Mongoose</span>
+    <span class="trusted-item">mysql2</span>
+    <span class="trusted-item">OpenAI SDK</span>
+    <span class="trusted-item">Inquirer.js</span>
+    <span class="trusted-item">TypeScript</span>
+  </div>
+</div>
+
+<!-- ─── FEATURES ──────────────────────────────────────────────────── -->
+<section id="features">
+  <div class="section-eyebrow reveal">
+    <h2>Redefining backend<br/>developer experience</h2>
+    <p>create-jerry makes backend scaffolding enjoyable again</p>
+  </div>
+
+  <div class="section-inner">
+    <div class="features-grid">
+
+      <!-- Instant scaffold -->
+      <div class="feat reveal">
+        <div class="feat-accent mongo"></div>
+        <div class="feat-icon mongo">⚡</div>
+        <h3>Instant Server Setup</h3>
+        <p>Run one command. Get a fully wired Express server with routes, middleware, database config, and error handling — ready in seconds.</p>
+        <div class="feat-visual">
+          <div class="cli-flow">
+            <div><span class="cli-q">✔</span> <span style="color:var(--muted)">Project name?</span> <span class="cli-a">my-api</span></div>
+            <div><span class="cli-q">✔</span> <span style="color:var(--muted)">Database</span> <span class="cli-a">MongoDB</span></div>
+            <div><span class="cli-q">✔</span> <span style="color:var(--muted)">Language</span> <span class="cli-a">TypeScript</span></div>
+            <div><span class="cli-q">✔</span> <span style="color:var(--muted)">Add AI module?</span> <span class="cli-a">Yes</span></div>
+            <div style="margin-top:8px;"><span class="cli-ok">✓</span> <span style="color:rgba(255,255,255,0.4)">Done in</span> <span class="cli-a">2.3s</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DB Selection -->
+      <div class="feat reveal reveal-delay-1">
+        <div class="feat-accent mysql"></div>
+        <div class="feat-icon mysql">🗄️</div>
+        <h3>Dual Database Support</h3>
+        <p>Choose MongoDB with Mongoose ODM or MySQL with a connection pool — complete with pre-built CRUD layers and auto connection setup.</p>
+        <div class="feat-visual">
+          <div class="code-snip">
+            <div><span class="c-dim">// MongoDB — Mongoose</span></div>
+            <div><span class="c-blue">import</span> <span class="c-white">mongoose</span> <span class="c-blue">from</span> <span class="c-amber">'mongoose'</span></div>
+            <div><span class="c-green">connectDB</span><span class="c-white">()</span></div>
+            <div style="margin-top:8px;"><span class="c-dim">// MySQL — Pool</span></div>
+            <div><span class="c-blue">import</span> <span class="c-white">pool</span> <span class="c-blue">from</span> <span class="c-amber">'mysql2/promise'</span></div>
+            <div><span class="c-blue">await</span> <span class="c-green">pool</span><span class="c-white">.query(sql)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Folder structure -->
+      <div class="feat reveal reveal-delay-2">
+        <div class="feat-accent white"></div>
+        <div class="feat-icon white">📁</div>
+        <h3>Production-Ready Structure</h3>
+        <p>Clean modular layout with config, modules, routes, middlewares, and utils — the same structure teams use in production.</p>
+        <div class="feat-visual">
+          <div class="code-snip">
+            <div class="tree">
+              <div><span class="t-root">your-project/</span></div>
+              <div>├── <span class="t-folder">src/</span></div>
+              <div>│   ├── <span class="t-folder">config/</span></div>
+              <div>│   ├── <span class="t-folder">modules/</span></div>
+              <div>│   │   ├── <span class="t-folder">user/</span></div>
+              <div>│   │   └── <span class="t-optional">ai/ (optional)</span></div>
+              <div>│   ├── <span class="t-folder">routes/</span></div>
+              <div>│   ├── <span class="t-folder">middlewares/</span></div>
+              <div>│   └── <span class="t-folder">utils/</span></div>
+              <div>├── <span class="t-file">.env</span></div>
+              <div>└── <span class="t-file">package.json</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI module -->
+      <div class="feat reveal reveal-delay-3">
+        <div class="feat-accent ai"></div>
+        <div class="feat-icon ai">🤖</div>
+        <h3>Built-in AI Module</h3>
+        <p>Scaffold an OpenAI-powered chat endpoint in seconds. Controller → Service → Provider architecture, ready to extend with your own logic.</p>
+        <div class="feat-visual">
+          <div class="code-snip">
+            <div><span class="c-dim">// Auto-generated</span></div>
+            <div><span class="c-blue">POST</span> <span class="c-amber">/ai/chat</span></div>
+            <div style="margin-top:8px;"><span class="c-dim">// Request body</span></div>
+            <div><span class="c-white">{</span></div>
+            <div>  <span class="c-green">"message"</span><span class="c-white">:</span> <span class="c-amber">"Hello, GPT!"</span></div>
+            <div><span class="c-white">}</span></div>
+            <div style="margin-top:8px;"><span class="c-dim">// 200 OK — streamed response</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOUNDATION ────────────────────────────────────────────────── -->
+<section id="foundation" class="foundation">
+  <div class="section-eyebrow reveal">
+    <h2>A shared foundation<br/>to build upon</h2>
+    <p>Extensible plugin architecture designed to grow with your project</p>
+  </div>
+
+  <div class="section-inner">
+    <div class="foundation-grid">
+
+      <!-- Plugin System -->
+      <div class="foundation-card reveal">
+        <h3>Flexible Plugin System</h3>
+        <p>Every feature in create-jerry is a plugin. MongoDB, MySQL, and AI are all first-party plugins — and the system is designed for you to add your own.</p>
+        <div class="feat-visual" style="margin-top:28px;">
+          <div class="plugin-list">
+            <div class="plugin-pill">
+              <span class="plugin-dot pd-mongo"></span>
+              <span class="plugin-name">mongodb-plugin</span>
+              <span class="plugin-badge pb-active">Active</span>
+            </div>
+            <div class="plugin-pill">
+              <span class="plugin-dot pd-mysql"></span>
+              <span class="plugin-name">mysql-plugin</span>
+              <span class="plugin-badge pb-active">Active</span>
+            </div>
+            <div class="plugin-pill">
+              <span class="plugin-dot pd-ai"></span>
+              <span class="plugin-name">openai-plugin</span>
+              <span class="plugin-badge pb-optional">Optional</span>
+            </div>
+            <div class="plugin-pill">
+              <span class="plugin-dot pd-gray"></span>
+              <span class="plugin-name">auth-plugin</span>
+              <span class="plugin-badge pb-soon">Soon</span>
+            </div>
+            <div class="plugin-pill">
+              <span class="plugin-dot pd-gray"></span>
+              <span class="plugin-name">redis-plugin</span>
+              <span class="plugin-badge pb-soon">Soon</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Endpoint -->
+      <div class="foundation-card reveal reveal-delay-1">
+        <h3>AI Module</h3>
+        <p>When enabled, a fully-wired GPT chat endpoint is scaffolded with a clean controller-service-provider split and the OpenAI SDK pre-installed.</p>
+        <div class="endpoint-box">
+          <div class="endpoint-header">
+            <span class="method-badge">POST</span>
+            /ai/chat
+          </div>
+          <div class="endpoint-body">
+            <div><span class="key">controller</span> → <span class="val">aiController.js</span></div>
+            <div><span class="key">service</span>    → <span class="val">aiService.js</span></div>
+            <div><span class="key">provider</span>   → <span class="val">openaiProvider.js</span></div>
+            <div style="margin-top:8px;"><span class="key">model</span> <span class="val">=</span> <span class="str">"gpt-4o"</span></div>
+            <div><span class="key">sdk</span>   <span class="val">=</span> <span class="str">openai@latest</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TypeScript -->
+      <div class="foundation-card reveal reveal-delay-2">
+        <h3>TypeScript &amp; JS — First Class</h3>
+        <p>Full TypeScript support with a pre-configured tsconfig.json, or stick with JavaScript — the choice is yours, made at scaffold time.</p>
+        <div class="feat-visual" style="margin-top:28px;">
+          <div class="code-snip">
+            <div><span class="c-dim">// tsconfig.json auto-generated</span></div>
+            <div><span class="c-white">{</span></div>
+            <div>  <span class="c-green">"compilerOptions"</span><span class="c-white">: {</span></div>
+            <div>    <span class="c-blue">"target"</span><span class="c-white">:</span> <span class="c-amber">"ES2020"</span><span class="c-white">,</span></div>
+            <div>    <span class="c-blue">"module"</span><span class="c-white">:</span> <span class="c-amber">"commonjs"</span><span class="c-white">,</span></div>
+            <div>    <span class="c-blue">"outDir"</span><span class="c-white">:</span> <span class="c-amber">"./dist"</span></div>
+            <div>  <span class="c-white">}</span></div>
+            <div><span class="c-white">}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CI / Auto deps -->
+      <div class="foundation-card reveal reveal-delay-3">
+        <h3>Auto Dependency Injection</h3>
+        <p>Dependencies are detected from your choices and dynamically injected into package.json — no manual npm installs, no missed packages.</p>
+        <div class="feat-visual" style="margin-top:28px;">
+          <div class="cli-flow">
+            <div><span class="cli-ok">✓</span> <span style="color:rgba(255,255,255,0.4)">Injecting dependencies…</span></div>
+            <div><span class="cli-ok">✓</span> <span class="cli-a">express</span> <span style="color:var(--muted)">^4.18.2</span></div>
+            <div><span class="cli-ok">✓</span> <span class="cli-a">mongoose</span> <span style="color:var(--muted)">^8.0.0</span></div>
+            <div><span class="cli-ok">✓</span> <span class="cli-a">openai</span> <span style="color:var(--muted)">^4.0.0</span></div>
+            <div><span class="cli-ok">✓</span> <span class="cli-a">typescript</span> <span style="color:var(--muted)">^5.0.0</span></div>
+            <div style="margin-top:6px;"><span class="cli-ok">⚡</span> <span style="color:rgba(255,255,255,0.4)">npm install running…</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ──────────────────────────────────────────────────────── -->
+<section class="stats-section">
+  <div class="stats-inner">
+    <div class="stats-text reveal">
+      <h2>Backend scaffolding<br/>that actually ships</h2>
+      <p>stop configuring. start building. create-jerry handles the boilerplate so you can focus on what your application actually does.</p>
+    </div>
+    <div class="stats-numbers reveal reveal-delay-1">
+      <div class="stat-box">
+        <div class="stat-num mongo">~2s</div>
+        <div class="stat-label">Scaffold time</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num mysql">6+</div>
+        <div class="stat-label">Plugins</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num ai">3</div>
+        <div class="stat-label">AI endpoints</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:rgba(255,255,255,0.7)">0</div>
+        <div class="stat-label">Manual config</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── COMMUNITY ─────────────────────────────────────────────────── -->
+<section id="community" class="community">
+  <div class="testi-header reveal">
+    <div>
+      <h2>Loved by the<br/>developer community</h2>
+      <p>Don't take our word for it — see what developers are saying.</p>
+    </div>
+    <div class="testi-meta">
+      <span class="big-num">MIT</span>
+      <span class="big-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        Open Source
+      </span>
+    </div>
+  </div>
+
+  <div class="testi-grid">
+    <div class="testi-card highlight-mongo reveal">
+      <p>"Saved me 2 hours on my last project. MongoDB wired up, routes ready, zero config. This is exactly what the Node ecosystem needed."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(0,237,100,0.1);color:var(--mongo)">AK</div>
+        <div>
+          <div class="testi-name">Aryan K.</div>
+          <div class="testi-handle">@aryan_dev</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testi-card reveal reveal-delay-1">
+      <p>"I scaffolded an Express + TypeScript + OpenAI app in literally 3 minutes. The folder structure is clean and production-ready out of the box."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(0,173,239,0.1);color:var(--mysql)">SR</div>
+        <div>
+          <div class="testi-name">Sneha R.</div>
+          <div class="testi-handle">@sneha_builds</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testi-card reveal reveal-delay-2">
+      <p>"The plugin architecture is a great call. I can already see this growing into something massive — auth, redis, docker plugins next?"</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(245,158,11,0.1);color:var(--ai)">MP</div>
+        <div>
+          <div class="testi-name">Mihir P.</div>
+          <div class="testi-handle">@mihir_code</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testi-card highlight-mysql reveal">
+      <p>"Finally a tool that treats MySQL as a first-class citizen alongside MongoDB. The connection pool setup is exactly what I needed."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(0,173,239,0.1);color:var(--mysql)">RV</div>
+        <div>
+          <div class="testi-name">Rahul V.</div>
+          <div class="testi-handle">@rahulv_sql</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testi-card reveal reveal-delay-1">
+      <p>"Opinionated enough to be useful, flexible enough to not get in the way. That's a hard balance and create-jerry nails it."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.4)">PD</div>
+        <div>
+          <div class="testi-name">Priya D.</div>
+          <div class="testi-handle">@priya_fullstack</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testi-card reveal reveal-delay-2">
+      <p>"The AI module scaffold is genuinely impressive. A working OpenAI endpoint with the right architecture in seconds — just wire in your API key."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(245,158,11,0.1);color:var(--ai)">KJ</div>
+        <div>
+          <div class="testi-name">Kabir J.</div>
+          <div class="testi-handle">@kabir_ai</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ───────────────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div class="cta-box reveal">
+    <h2>Start building<br/>with create-jerry</h2>
+    <p>A development environment that keeps pace with the speed of your ideas.</p>
+    <div class="cta-cmd" onclick="copyCtaCmd(this)">
+      <span class="dollar">$</span>
+      npx create-jerry
+      <span style="color:var(--muted);font-size:.7rem;">click to copy</span>
+    </div>
+    <div class="cta-buttons">
+      <a href="https://github.com/TomLucasakaTGeek" class="btn-primary" target="_blank">Get Started</a>
+      <a href="https://github.com/TomLucasakaTGeek" class="btn-secondary" target="_blank">View on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="nav-logo" style="margin-bottom:16px;">
+          <div class="bolt">⚡</div>
+          create-jerry
+        </div>
+        <p>The backend scaffold tool for Node.js. Production-ready in seconds.</p>
+      </div>
+      <div class="footer-col">
+        <h4>JerrIt</h4>
+        <ul>
+          <li><a href="#features">Guide</a></li>
+          <li><a href="#foundation">Plugins</a></li>
+          <li><a href="https://github.com/TomLucasakaTGeek">Releases</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="https://github.com/TomLucasakaTGeek">Team</a></li>
+          <li><a href="https://github.com/TomLucasakaTGeek">Blog</a></li>
+          <li><a href="https://github.com/TomLucasakaTGeek">Contribute</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Social</h4>
+        <ul>
+          <li><a href="https://github.com/TomLucasakaTGeek" target="_blank">GitHub</a></li>
+          <li><a href="#">X.com</a></li>
+          <li><a href="#">Discord</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024-present Tanmay Khanna and JerrIt contributors</p>
+      <div class="footer-social">
+        <a href="https://github.com/TomLucasakaTGeek" target="_blank">GitHub @TomLucasakaTGeek</a>
+        <a href="#">MIT License</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<script>
+  // Tab switching
+  function switchTab(el, id) {
+    document.querySelectorAll('.pkg-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    ['npx','npm','yarn','pnpm'].forEach(name => {
+      const el2 = document.getElementById('cmd-' + name);
+      if (el2) el2.style.display = name === id ? 'block' : 'none';
+    });
+  }
+
+  // Copy command
+  function copyCmd(el) {
+    const text = el.querySelector('span:nth-child(2)').textContent.trim();
+    navigator.clipboard.writeText(text).then(() => showToast());
+  }
+  function copyCtaCmd(el) {
+    navigator.clipboard.writeText('npx create-jerry').then(() => showToast());
+  }
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Smooth scroll
+  function scrollTo(sel) {
+    document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Hero tag animation stagger on load
+  document.addEventListener('DOMContentLoaded', () => {
+    const heroEls = document.querySelectorAll('.hero-content > *');
+    heroEls.forEach((el, i) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = `opacity .6s ease ${i * 0.1}s, transform .6s ease ${i * 0.1}s`;
+      requestAnimationFrame(() => {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+    });
+  });
+</script>
+</body>
+</html>
